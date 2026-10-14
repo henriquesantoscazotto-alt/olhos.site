@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silentium — Acesso Restrito</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <button class="sound-toggle" id="soundToggle" title="Alternar som">♪</button>
+
+  <div class="container">
+    <h1>Silentium</h1>
+    <div class="instruction">pronuncie a palavra</div>
+    <input 
+      type="text" 
+      id="codeInput" 
+      autocomplete="off" 
+      spellcheck="false" 
+      autofocus
+    >
+    <div class="message" id="message">Acesso negado</div>
+  </div>
+
+  <div class="granted" id="granted">
+    <span>Acesso Concedido</span>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
