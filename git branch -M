@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>ACESSO RESTRITO</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+    background: #0a0a0a;
+    color: #d0d0d0;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Efeito de vinheta sombria */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 0%, #000 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Ruído sutil */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 3px);
+    pointer-events: none;
+    z-index: 2;
+    animation: flicker 4s infinite;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.6; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    padding: 40px;
+  }
+
+  h1 {
+    font-size: 1.2rem;
+    letter-spacing: 0.8em;
+    font-weight: 300;
+    color: #666;
+    margin-bottom: 60px;
+    text-transform: uppercase;
+    padding-left: 0.8em;
+  }
+
+  .instruction {
+    font-size: 0.75rem;
+    color: #444;
+    letter-spacing: 0.3em;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+  }
+
+  input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #333;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    font-size: 1.3rem;
+    padding: 12px 20px;
+    text-align: center;
+    letter-spacing: 0.4em;
+    outline: none;
+    width: 320px;
+    transition: border-color 0.4s ease, color 0.4s ease;
+    caret-color: #888;
+  }
+
+  input:focus {
+    border-bottom-color: #888;
+  }
+
+  input.error {
+    border-bottom-color: #5a1010;
+    color: #8a2020;
+    animation: shake 0.4s;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .message {
+    margin-top: 25px;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: #5a1010;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.5s;
+    height: 16px;
+  }
+
+  .message.show {
+    opacity: 1;
+  }
+
+  /* Tela de acesso concedido */
+  .granted {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+  }
+
+  .granted.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .granted span {
+    color: #d0d0d0;
+    letter-spacing: 0.8em;
+    font-size: 1rem;
+    text-transform: uppercase;
+    padding-left: 0.8em;
+  }
+
+  /* Botão de som */
+  .sound-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 5;
+    background: transparent;
+    border: 1px solid #222;
+    color: #555;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+    font-family: 'Courier New', monospace;
+  }
+
+  .sound-toggle:hover {
+    border-color: #555;
+    color: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<button class="sound-toggle" id="soundToggle" title="Som">♪</button>
+
+<div class="container">
+  <h1>Silentium</h1>
+  <div class="instruction">pronuncie a palavra</div>
+  <input type="text" id="codeInput" autocomplete="off" spellcheck="false" autofocus>
+  <div class="message" id="message">Acesso negado</div>
+</div>
+
+<div class="granted" id="granted">
+  <span>Acesso Concedido</span>
+</div>
+
+<!-- Áudio de fundo - som ambiente sombrio gerado via Web Audio API -->
+<script>
+  // ============================================
+  // ÁUDIO DE FUNDO (gerado proceduralmente)
+  // ============================================
+  let audioCtx = null;
+  let audioNodes = [];
+  let soundEnabled = true;
+
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Drone grave contínuo (som ambiente sombrio)
+    const masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.0;
+    masterGain.connect(audioCtx.destination);
+
+    // Fade in suave
+    masterGain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 4);
+
+    // Tom grave 1 (drone principal)
+    const osc1 = audioCtx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.value = 55; // A1
+    const g1 = audioCtx.createGain();
+    g1.gain.value = 0.5;
+    osc1.connect(g1).connect(masterGain);
+    osc1.start();
+
+    // Tom grave 2 (levemente desafinado - batimento)
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.value = 55.3;
+    const g2 = audioCtx.createGain();
+    g2.gain.value = 0.4;
+    osc2.connect(g2).connect(masterGain);
+    osc2.start();
+
+    // Tom sub-grave (contínuo, faz vibrar levemente)
+    const osc3 = audioCtx.createOscillator();
+    osc3.type = 'sine';
+    osc3.frequency.value = 27.5;
+    const g3 = audioCtx.createGain();
+    g3.gain.value = 0.35;
+    osc3.connect(g3).connect(masterGain);
+    osc3.start();
+
+    // Ruído filtrado (vento distante)
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.value = 400;
+    noiseFilter.Q.value = 2;
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.value = 0.15;
+
+    noise.connect(noiseFilter).connect(noiseGain).connect(masterGain);
+    noise.start();
+
+    // LFO lento para modular a intensidade (respiração)
+    const lfo = audioCtx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.06;
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 0.05;
+    lfo.connect(lfoGain).connect(masterGain.gain);
+    lfo.start();
+
+    audioNodes = [osc1, osc2, osc3, noise, lfo, masterGain];
+  }
+
+  function setSound(on) {
+    soundEnabled = on;
+    if (audioCtx) {
+      audioCtx.suspend();
+    }
+    if (on && audioCtx) {
+      audioCtx.resume();
+    }
+  }
+
+  // Inicia o áudio na primeira interação (política de autoplay)
+  function startAudioOnFirstInteraction() {
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    document.removeEventListener('click', startAudioOnFirstInteraction);
+    document.removeEventListener('keydown', startAudioOnFirstInteraction);
+  }
+  document.addEventListener('click', startAudioOnFirstInteraction);
+  document.addEventListener('keydown', startAudioOnFirstInteraction);
+
+  // Botão de som
+  const soundToggle = document.getElementById('soundToggle');
+  soundToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    soundEnabled = !soundEnabled;
+    if (!audioCtx) {
+      initAudio();
+    }
+    if (soundEnabled) {
+      audioCtx.resume();
+      soundToggle.textContent = '♪';
+      soundToggle.style.color = '#555';
+    } else {
+      audioCtx.suspend();
+      soundToggle.textContent = '✕';
+      soundToggle.style.color = '#2a2a2a';
+    }
+  });
+
+  // ============================================
+  // SISTEMA DE SENHA
+  // ============================================
+  const input = document.getElementById('codeInput');
+  const message = document.getElementById('message');
+  const granted = document.getElementById('granted');
+
+  // Aceita "Testemunha" ou "Testemunhar" (sem diferenciar maiúsculas/minúsculas e acentos)
+  const validAnswers = ['testemunha', 'testemunhar'];
+
+  function normalize(str) {
+    return str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
+  function tryAccess() {
+    const value = normalize(input.value);
+    if (validAnswers.includes(value)) {
+      // Sucesso
+      if (audioCtx && soundEnabled) {
+        // Aumenta o som dramaticamente
+        audioNodes.forEach(n => {
+          if (n.gain) {
+            n.gain.linearRampToValueAtTime(n.gain.value * 2, audioCtx.currentTime + 1.5);
+          }
+        });
+      }
+      granted.classList.add('active');
+      
+      // Redireciona após a animação (troque a URL abaixo)
+      setTimeout(() => {
+        // ⚠️ TROQUE ESTA URL pelo site de destino
+        window.location.href = 'https://exemplo.com';
+      }, 2500);
+    } else {
+      // Erro
+      input.classList.add('error');
+      message.classList.add('show');
+      setTimeout(() => {
+        input.classList.remove('error');
+        message.classList.remove('show');
+      }, 1800);
+    }
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      tryAccess();
+    }
+  });
+</script>
+
+</body>
+</html>
