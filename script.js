@@ -3,7 +3,7 @@ const message = document.getElementById('message');
 const granted = document.getElementById('granted');
 
 // ⚠️ CONFIGURE AQUI
-const REDIRECT_URL = 'https://exemplo.com';       // troque pelo seu destino
+const REDIRECT_URL = 'https://henriquesantoscazotto-alt.github.io/fronteira.site/';       // troque pelo seu destino
 const VALID_ANSWERS = ['testemunha', 'testemunhar']; // palavras aceitas
 
 // Normaliza texto: minúsculas + remove acentos + trim
